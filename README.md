@@ -72,8 +72,7 @@ flutter test
 ```
 
 - `lib/`：Flutterアプリ、ローカルDB、3D部屋表示
-- `backend/`：FastAPI・OpenAI連携・日次制限の参考実装
-- `infra/`：独自環境向けの参考コード。AWSアカウントIDはダミーです。共有AWSへ配備するための権限は含みません
+- 公開版にはサーバー実装・AWS配備スクリプトを含めません。稼働中の共有AWSを利用するため、PCでのサーバー起動やAWS構築は不要です。
 - [AWS設計](docs/AWS_ARCHITECTURE.md)
 - [コンペ終了後の停止手順](docs/SHUTDOWN.md)
 
