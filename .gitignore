@@ -1,0 +1,108 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.env
+.env.*
+!.env.example
+**/.env
+/backend/env
+**/.env.*
+!**/.env.example
+.venv/
+**/.venv/
+**/__pycache__/
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.flutter-plugins
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/build/
+/bugreport-*.zip
+
+# FVM - Flutter Version Management
+
+# FVM Version Cache
+.fvm/
+
+# Build outputs (recursive, not just root)
+**/build/
+android/.gradle/
+android/app/.cxx/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+
+# Python backend
+backend/.pytest_cache/
+backend/**/*.egg-info/
+
+# Flutter dart-define (個人環境固有の値、dart_define.example.jsonがテンプレート)
+dart_define.json
+
+# Secrets and credentials (実値は共有・コミットしない)
+.aws/
+**/.aws/
+credentials
+credentials.*
+!credentials.example.*
+secrets.json
+secrets.*.json
+secrets.yaml
+secrets.yml
+!secrets.example.json
+!secrets.example.yaml
+!secrets.example.yml
+*.pem
+*.p12
+*.pfx
+*.mobileprovision
+*.keystore
+*.jks
+android/key.properties
+
+# Claude Code - 個人用のみ除外(チーム共有分はコミットする)
+.claude/settings.local.json
+.claude/worktrees/
+.claude/local/
+.claude/**/*.local.*
+docs/ROOM_EDIT_HANDOFF.md
