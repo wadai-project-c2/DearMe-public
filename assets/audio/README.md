@@ -12,7 +12,7 @@ iOSではambientカテゴリを使用し、端末のサイレントモードを�
 
 CREATE右上の音符から「サウンド設定」を開きます。BGMと演出・画面切替の効果音を個別に切り替えられます。既存の標準ボタン操作音は別系統で、端末のサイレント・操作音設定に従います。削除済みの「部屋について」画面は復活させません。
 
-- `sfx/button_tap.mp3`: 汎用ボタン（将来の追加用）
+- `sfx/button_tap.mp3`: 汎用ボタン（CREATEメニュー、ルーム配置画面などで使用。`AppInteractionFeedback` 経由）
 - `sfx/navigation.mp3`: 下部ナビゲーション・ホーム復帰
 - `sfx/processing_complete.mp3`: 写真・画像加工完了（将来の完了通知用）
 - `sfx/swipe_placement.mp3`: 思い出を上へスワイプして配置
