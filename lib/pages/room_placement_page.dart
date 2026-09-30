@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -7,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../audio/audio_controller.dart';
 import '../models/item_model.dart';
 import '../models/room_models.dart';
 import '../providers/item_provider.dart';
@@ -17,6 +19,7 @@ import '../room/placement_rotation.dart';
 import '../room/room_3d_route_visibility.dart';
 import '../room/room_calibration.dart';
 import '../room/room_scene_widget.dart';
+import '../services/app_interaction_feedback.dart';
 
 class RoomPlacementPage extends StatefulWidget {
   final String? itemId;
@@ -169,7 +172,8 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
       }
       return Scaffold(
         appBar: AppBar(
-          leading: BackButton(onPressed: _returnToCreate),
+          leading: BackButton(
+              onPressed: AppInteractionFeedback.wrap(context, _returnToCreate)),
           title: const Text('部屋に置く'),
         ),
         body: Center(
@@ -180,6 +184,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: () {
+                  AppInteractionFeedback.tap(context);
                   setState(() {
                     _error = null;
                     _initializing = true;
@@ -228,7 +233,8 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
       child: Scaffold(
         backgroundColor: const Color(0xfffff8fb),
         appBar: AppBar(
-          leading: BackButton(onPressed: _returnToCreate),
+          leading: BackButton(
+              onPressed: AppInteractionFeedback.wrap(context, _returnToCreate)),
           backgroundColor: const Color(0xfffff8fb),
           title: Text(room.name),
           actions: [
@@ -338,10 +344,14 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
 
     if (draft.placementSurface.isVertical) {
       if (_dragDelta.dx.abs() >= _dragDelta.dy.abs()) {
-        _move(_dragDelta.dx > 0 ? 1 : -1, 0, 0);
+        if (_move(_dragDelta.dx > 0 ? 1 : -1, 0, 0)) {
+          AppInteractionFeedback.tap(context);
+        }
       } else {
         // Wall Y increases upward while screen Y increases downward.
-        _move(0, 0, _dragDelta.dy > 0 ? 1 : -1);
+        if (_move(0, 0, _dragDelta.dy > 0 ? 1 : -1)) {
+          AppInteractionFeedback.tap(context);
+        }
       }
       _dragDelta = Offset.zero;
       return;
@@ -369,7 +379,9 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     // 床軸と平行な斜め4方向だけを受け付ける。上下左右に近い曖昧な
     // ジェスチャーは移動させず、次の指の区間から改めて判定する。
     if (nearestDistance <= 30) {
-      _move(nearest.x, 0, nearest.z);
+      if (_move(nearest.x, 0, nearest.z)) {
+        AppInteractionFeedback.tap(context);
+      }
     }
     _dragDelta = Offset.zero;
   }
@@ -465,9 +477,10 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     }
   }
 
-  void _move(int x, int y, int z) {
+  /// Returns whether the draft actually moved to a different cell/surface.
+  bool _move(int x, int y, int z) {
     final draft = _draft;
-    if (draft == null) return;
+    if (draft == null) return false;
     final calibration = RoomCalibrations.forRoom(draft.roomId);
     final provider = context.read<RoomProvider>();
 
@@ -557,7 +570,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
         nextY == draft.gridY &&
         nextZ == draft.gridZ &&
         surface == draft.placementSurface) {
-      return;
+      return false;
     }
     HapticFeedback.selectionClick();
     _updateDraft(
@@ -569,6 +582,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
         rotationZ: surface != draft.placementSurface ? 0 : draft.rotationZ,
       ),
     );
+    return true;
   }
 
   void _setRotation({double? x, double? y, double? z}) {
@@ -626,6 +640,12 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     }
   }
 
+  void _playSaveComplete() {
+    unawaited(
+      context.read<AudioController>().playEffect(SoundEffect.saveComplete),
+    );
+  }
+
   Future<void> _save(RoomProvider provider, RoomObjectModel draft) async {
     if (_storePending) {
       setState(() => _saving = true);
@@ -647,6 +667,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
             _fineAdjustment = false;
             _storePending = false;
           });
+          _playSaveComplete();
         }
       } catch (_) {
         if (mounted) {
@@ -682,6 +703,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
           _fineAdjustment = false;
           _storePending = false;
         });
+        _playSaveComplete();
       }
     } catch (error) {
       if (mounted) {
@@ -722,7 +744,8 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     return Scaffold(
       backgroundColor: const Color(0xfffff8fb),
       appBar: AppBar(
-        leading: BackButton(onPressed: _returnToCreate),
+        leading: BackButton(
+            onPressed: AppInteractionFeedback.wrap(context, _returnToCreate)),
         backgroundColor: const Color(0xfffff8fb),
         title: Text('${room.name}を編集中'),
         centerTitle: true,
@@ -811,14 +834,17 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
                     ],
                     selected: {_showFurniture},
                     showSelectedIcon: false,
-                    onSelectionChanged: (value) =>
-                        setState(() => _showFurniture = value.first),
+                    onSelectionChanged: (value) {
+                      AppInteractionFeedback.tap(context);
+                      setState(() => _showFurniture = value.first);
+                    },
                   ),
                 ),
                 const SizedBox(width: 6),
                 OutlinedButton.icon(
                   onPressed: _hasSelection
-                      ? () => setState(() => _fineAdjustment = true)
+                      ? AppInteractionFeedback.wrap(
+                          context, () => setState(() => _fineAdjustment = true))
                       : null,
                   icon: const Icon(Icons.my_location_rounded, size: 18),
                   label: const Text('微調整'),
@@ -839,7 +865,8 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints.expand(),
                       icon: const Icon(Icons.chevron_left_rounded),
-                      onPressed: () => _scrollItemPickerBy(80),
+                      onPressed: AppInteractionFeedback.wrap(
+                          context, () => _scrollItemPickerBy(80)),
                     ),
                   ),
                   Expanded(
@@ -891,7 +918,8 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints.expand(),
                       icon: const Icon(Icons.chevron_right_rounded),
-                      onPressed: () => _scrollItemPickerBy(-80),
+                      onPressed: AppInteractionFeedback.wrap(
+                          context, () => _scrollItemPickerBy(-80)),
                     ),
                   ),
                 ],
@@ -908,12 +936,14 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
       final assetKey = object.assetKey;
       if (assetKey == null || assetKey == _selectedFurnitureAssetKey) return;
       HapticFeedback.selectionClick();
+      AppInteractionFeedback.tap(context);
       _selectFurniture(provider, assetKey);
       return;
     }
     final itemId = object.itemId;
     if (itemId == null || itemId == _selectedItemId) return;
     HapticFeedback.selectionClick();
+    AppInteractionFeedback.tap(context);
     _selectItem(itemId);
   }
 
@@ -1036,7 +1066,7 @@ class _FurnitureChoiceCard extends StatelessWidget {
     };
     final thumbnailAsset = furniture.thumbnailAssetPath;
     return InkWell(
-      onTap: onTap,
+      onTap: AppInteractionFeedback.wrap(context, onTap),
       borderRadius: BorderRadius.circular(14),
       child: Container(
         width: 74,
@@ -1092,7 +1122,7 @@ class _UnselectedChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: AppInteractionFeedback.wrap(context, onTap),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: 74,
@@ -1133,7 +1163,7 @@ class _ItemChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: AppInteractionFeedback.wrap(context, onTap),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: 74,
@@ -1322,7 +1352,8 @@ class _PlacementPanel extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
-                    onPressed: () => onFineChanged(false),
+                    onPressed: AppInteractionFeedback.wrap(
+                        context, () => onFineChanged(false)),
                     icon: const Icon(Icons.arrow_back_rounded),
                     label: const Text('通常操作に戻る'),
                   ),
@@ -1441,7 +1472,9 @@ class _PlacementPanel extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: OutlinedButton.icon(
-                        onPressed: canStore ? onStore : null,
+                        onPressed: canStore
+                            ? AppInteractionFeedback.wrap(context, onStore)
+                            : null,
                         icon: const Icon(Icons.inventory_2_outlined),
                         label: const Text('収納', maxLines: 1),
                       ),
@@ -1470,11 +1503,14 @@ class _HistoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final callback = onPressed;
     return IconButton(
       visualDensity: VisualDensity.compact,
       constraints: const BoxConstraints.tightFor(width: 44, height: 40),
       tooltip: tooltip,
-      onPressed: onPressed,
+      onPressed: callback == null
+          ? null
+          : AppInteractionFeedback.wrap(context, callback),
       icon: Icon(icon),
     );
   }
@@ -1496,7 +1532,7 @@ class _FineMoveButton extends StatelessWidget {
       scale: 0.9,
       transformHitTests: false,
       child: OutlinedButton.icon(
-        onPressed: onPressed,
+        onPressed: AppInteractionFeedback.wrap(context, onPressed),
         icon: Icon(icon, color: const Color(0xffef7891)),
         label: Text(label),
         style: OutlinedButton.styleFrom(

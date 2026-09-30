@@ -603,7 +603,7 @@ class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
     }
     return GestureDetector(
       onTap: () {
-        AppInteractionFeedback.tap();
+        AppInteractionFeedback.tap(context);
         setState(() {
           _controller.value.isPlaying
               ? _controller.pause()

@@ -175,6 +175,7 @@ class _StickerItem extends StatelessWidget {
         child: Center(
           child: GestureDetector(
             onTap: AppInteractionFeedback.wrap(
+              context,
               () => context.push('/item_detail', extra: item),
             ),
             onLongPress: () => _showDeleteDialog(context),
