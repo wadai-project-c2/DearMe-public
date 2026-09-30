@@ -17,10 +17,14 @@ abstract interface class AudioPlayerHandle {
 }
 
 class AudioplayersHandle implements AudioPlayerHandle {
-  AudioplayersHandle(String playerId)
+  /// [keepLoaded] is for short effects played repeatedly: the prepared source
+  /// is kept after playback so the next tap skips re-preparing it.
+  AudioplayersHandle(String playerId, {this.keepLoaded = false})
       : _player = AudioPlayer(playerId: playerId);
 
   final AudioPlayer _player;
+  final bool keepLoaded;
+  bool _configured = false;
 
   // App audio is supplementary: respect Silent mode and mix with other apps.
   static AudioContext get audioContext => AudioContext(
@@ -31,8 +35,19 @@ class AudioplayersHandle implements AudioPlayerHandle {
   Future<void> setLooping() => _player.setReleaseMode(ReleaseMode.loop);
 
   @override
-  Future<void> playAsset(String path, {double volume = 1}) =>
-      _player.play(AssetSource(path), volume: volume, ctx: audioContext);
+  Future<void> playAsset(String path, {double volume = 1}) async {
+    if (!keepLoaded) {
+      return _player.play(AssetSource(path), volume: volume, ctx: audioContext);
+    }
+    // ReleaseMode.release (the default) discards the prepared source after each
+    // playback, and the audio context is global on iOS, so set both only once.
+    if (!_configured) {
+      await _player.setReleaseMode(ReleaseMode.stop);
+      await _player.setAudioContext(audioContext);
+      _configured = true;
+    }
+    await _player.play(AssetSource(path), volume: volume);
+  }
 
   @override
   Future<void> pause() => _player.pause();
@@ -97,7 +112,10 @@ class AudioController extends ChangeNotifier with WidgetsBindingObserver {
     AssetBundle? assetBundle,
   })  : _bgmPlayer = bgmPlayer ?? AudioplayersHandle('dearme_bgm'),
         _effectPlayerFactory = effectPlayerFactory ??
-            ((effect) => AudioplayersHandle('dearme_sfx_${effect.name}')),
+            ((effect) => AudioplayersHandle(
+                  'dearme_sfx_${effect.name}',
+                  keepLoaded: true,
+                )),
         _settingsStore = settingsStore ?? SharedPreferencesAudioSettingsStore(),
         _assetBundle = assetBundle ?? rootBundle;
 
