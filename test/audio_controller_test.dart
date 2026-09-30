@@ -20,6 +20,7 @@ class _MemoryAssetBundle extends CachingAssetBundle {
 class _FakePlayer implements AudioPlayerHandle {
   int loops = 0;
   int plays = 0;
+  int preloads = 0;
   int pauses = 0;
   int resumes = 0;
   int stops = 0;
@@ -36,6 +37,9 @@ class _FakePlayer implements AudioPlayerHandle {
     lastAsset = path;
     lastVolume = volume;
   }
+
+  @override
+  Future<void> preload(String path) async => preloads++;
 
   @override
   Future<void> pause() async => pauses++;
@@ -145,6 +149,45 @@ void main() {
     await controller.playEffect(SoundEffect.navigation);
     expect(effect.plays, 1);
     expect(effect.stops, 1);
+    controller.dispose();
+  });
+
+  test('every effect is prepared at startup, once each', () async {
+    final players = <SoundEffect, _FakePlayer>{};
+    final controller = AudioController(
+      bgmPlayer: _FakePlayer(),
+      settingsStore: _MemorySettings(),
+      effectPlayerFactory: (e) => players[e] = _FakePlayer(),
+      assetBundle: _MemoryAssetBundle({
+        for (final e in SoundEffect.values) 'assets/${e.assetPath}',
+      }),
+    );
+
+    await controller.initialize();
+    await Future<void>.delayed(Duration.zero);
+    expect(players.keys, unorderedEquals(SoundEffect.values));
+    expect(players.values.map((p) => p.preloads), everyElement(1));
+    expect(players.values.map((p) => p.plays), everyElement(0));
+    controller.dispose();
+  });
+
+  test('a tap right after startup shares the preload instead of repeating it',
+      () async {
+    final players = <SoundEffect, _FakePlayer>{};
+    final controller = AudioController(
+      bgmPlayer: _FakePlayer(),
+      settingsStore: _MemorySettings(),
+      effectPlayerFactory: (e) => players[e] = _FakePlayer(),
+      assetBundle: _MemoryAssetBundle({
+        for (final e in SoundEffect.values) 'assets/${e.assetPath}',
+      }),
+    );
+
+    await controller.initialize();
+    await controller.playEffect(SoundEffect.buttonTap);
+    final tap = players[SoundEffect.buttonTap]!;
+    expect(tap.preloads, 1);
+    expect(tap.plays, 1);
     controller.dispose();
   });
 

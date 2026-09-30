@@ -10,6 +10,9 @@ import 'audio_assets.dart';
 abstract interface class AudioPlayerHandle {
   Future<void> setLooping();
   Future<void> playAsset(String path, {double volume = 1});
+
+  /// Prepares [path] so a later [playAsset] can start without loading it.
+  Future<void> preload(String path);
   Future<void> resume();
   Future<void> pause();
   Future<void> stop();
@@ -25,6 +28,7 @@ class AudioplayersHandle implements AudioPlayerHandle {
   final AudioPlayer _player;
   final bool keepLoaded;
   bool _configured = false;
+  String? _loadedPath;
 
   // App audio is supplementary: respect Silent mode and mix with other apps.
   static AudioContext get audioContext => AudioContext(
@@ -39,14 +43,29 @@ class AudioplayersHandle implements AudioPlayerHandle {
     if (!keepLoaded) {
       return _player.play(AssetSource(path), volume: volume, ctx: audioContext);
     }
-    // ReleaseMode.release (the default) discards the prepared source after each
-    // playback, and the audio context is global on iOS, so set both only once.
-    if (!_configured) {
-      await _player.setReleaseMode(ReleaseMode.stop);
-      await _player.setAudioContext(audioContext);
-      _configured = true;
+    await _configure();
+    if (_loadedPath == path) {
+      // Already prepared: skip re-setting the source (see AudioPlayer.play).
+      await _player.resume();
+      return;
     }
     await _player.play(AssetSource(path), volume: volume);
+  }
+
+  @override
+  Future<void> preload(String path) async {
+    await _configure();
+    await _player.setSource(AssetSource(path));
+    _loadedPath = path;
+  }
+
+  // ReleaseMode.release (the default) discards the prepared source after each
+  // playback, and the audio context is global on iOS, so set both only once.
+  Future<void> _configure() async {
+    if (_configured) return;
+    await _player.setReleaseMode(ReleaseMode.stop);
+    await _player.setAudioContext(audioContext);
+    _configured = true;
   }
 
   @override
@@ -128,6 +147,7 @@ class AudioController extends ChangeNotifier with WidgetsBindingObserver {
   final AudioSettingsStore _settingsStore;
   final AssetBundle _assetBundle;
   final Map<SoundEffect, AudioPlayerHandle> _effectPlayers = {};
+  final Map<SoundEffect, Future<void>> _effectReady = {};
   final Map<SoundEffect, DateTime> _lastEffectAt = {};
   final Map<String, bool> _assetAvailability = {};
 
@@ -164,6 +184,12 @@ class AudioController extends ChangeNotifier with WidgetsBindingObserver {
     _initialized = true;
     notifyListeners();
     await _syncBgm();
+    if (_disposed) return;
+    // Start BGM first, then prepare every effect in the background so the
+    // first tap does not have to wait for its source to load.
+    for (final effect in SoundEffect.values) {
+      unawaited(_prepareEffect(effect));
+    }
   }
 
   Future<void> setBgmEnabled(bool enabled) async {
@@ -196,6 +222,10 @@ class AudioController extends ChangeNotifier with WidgetsBindingObserver {
     if (!await _hasAsset(effect.assetPath)) return;
     _lastEffectAt[effect] = now;
     try {
+      // Shares the startup preload, so a tap right after launch never prepares
+      // the same player twice at once.
+      await _prepareEffect(effect);
+      if (_disposed) return;
       final player = _effectPlayers.putIfAbsent(
         effect,
         () => _effectPlayerFactory(effect),
@@ -204,6 +234,24 @@ class AudioController extends ChangeNotifier with WidgetsBindingObserver {
     } catch (error) {
       debugPrint('[Audio] ${effect.name}を再生できませんでした: $error');
     }
+  }
+
+  Future<void> _prepareEffect(SoundEffect effect) {
+    return _effectReady.putIfAbsent(effect, () async {
+      try {
+        if (_disposed || !await _hasAsset(effect.assetPath) || _disposed) {
+          return;
+        }
+        final player = _effectPlayers.putIfAbsent(
+          effect,
+          () => _effectPlayerFactory(effect),
+        );
+        await player.preload(effect.assetPath);
+      } catch (error) {
+        // playAsset falls back to loading the source on demand.
+        debugPrint('[Audio] ${effect.name}を準備できませんでした: $error');
+      }
+    });
   }
 
   @override
@@ -288,6 +336,7 @@ class AudioController extends ChangeNotifier with WidgetsBindingObserver {
       unawaited(player.dispose());
     }
     _effectPlayers.clear();
+    _effectReady.clear();
     super.dispose();
   }
 }

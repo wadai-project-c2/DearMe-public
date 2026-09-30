@@ -39,6 +39,9 @@ class Player implements AudioPlayerHandle {
   }
 
   @override
+  Future<void> preload(String path) async {}
+
+  @override
   Future<void> pause() async {
     if (pauseGate != null) await pauseGate!.future;
     playing = false;
