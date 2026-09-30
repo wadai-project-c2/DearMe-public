@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-import '../audio/audio_controller.dart';
+import '../services/app_interaction_feedback.dart';
 
 class CreateMenuScreen extends StatelessWidget {
   final VoidCallback? onBackToHome;
@@ -88,8 +85,7 @@ class CreateMenuScreen extends StatelessWidget {
   }
 
   void _withButtonSound(BuildContext context, VoidCallback action) {
-    unawaited(
-        context.read<AudioController>().playEffect(SoundEffect.buttonTap));
+    AppInteractionFeedback.tap(context);
     action();
   }
 }

@@ -149,7 +149,7 @@ class _AddAvatarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: AppInteractionFeedback.wrap(onTap),
+      onTap: AppInteractionFeedback.wrap(context, onTap),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Column(
@@ -200,7 +200,7 @@ class _AvatarIconItem extends StatelessWidget {
     final assetPath = _getAvatarAssetPath(avatar.id);
 
     return GestureDetector(
-      onTap: AppInteractionFeedback.wrap(onTap),
+      onTap: AppInteractionFeedback.wrap(context, onTap),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Column(

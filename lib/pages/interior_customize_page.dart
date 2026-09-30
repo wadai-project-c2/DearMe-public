@@ -156,6 +156,7 @@ class _InteriorCustomizePageState extends State<InteriorCustomizePage> {
                 final isSelected = _activeSlot?.id == slot.id;
                 return GestureDetector(
                   onTap: AppInteractionFeedback.wrap(
+                    context,
                     () => setState(() => _activeSlot = slot),
                   ),
                   child: Container(
@@ -255,7 +256,7 @@ class _InteriorCustomizePageState extends State<InteriorCustomizePage> {
         .any((o) => o.itemId == item.id && o.isPlaced);
 
     return GestureDetector(
-      onTap: AppInteractionFeedback.wrap(() => _handlePlace(item)),
+      onTap: AppInteractionFeedback.wrap(context, () => _handlePlace(item)),
       child: Container(
         width: 100,
         margin: const EdgeInsets.only(right: 12, bottom: 20),
