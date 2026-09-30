@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -7,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../audio/audio_controller.dart';
 import '../models/item_model.dart';
 import '../models/room_models.dart';
 import '../providers/item_provider.dart';
@@ -239,10 +241,8 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilledButton.icon(
-                onPressed: canSave
-                    ? AppInteractionFeedback.wrap(
-                        context, () => _save(roomProvider, draft))
-                    : null,
+                onPressed:
+                    canSave ? () => _save(roomProvider, draft) : null,
                 icon: _saving
                     ? const SizedBox.square(
                         dimension: 16,
@@ -633,6 +633,12 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     }
   }
 
+  void _playSaveComplete() {
+    unawaited(
+      context.read<AudioController>().playEffect(SoundEffect.saveComplete),
+    );
+  }
+
   Future<void> _save(RoomProvider provider, RoomObjectModel draft) async {
     if (_storePending) {
       setState(() => _saving = true);
@@ -654,6 +660,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
             _fineAdjustment = false;
             _storePending = false;
           });
+          _playSaveComplete();
         }
       } catch (_) {
         if (mounted) {
@@ -689,6 +696,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
           _fineAdjustment = false;
           _storePending = false;
         });
+        _playSaveComplete();
       }
     } catch (error) {
       if (mounted) {
