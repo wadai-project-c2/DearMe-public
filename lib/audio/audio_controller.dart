@@ -25,6 +25,9 @@ class AudioplayersHandle implements AudioPlayerHandle {
   // App audio is supplementary: respect Silent mode and mix with other apps.
   static AudioContext get audioContext => AudioContext(
         iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+        // Do not take audio focus: a short effect must not pause the BGM
+        // player (audioplayers defaults to AndroidAudioFocus.gain).
+        android: const AudioContextAndroid(audioFocus: AndroidAudioFocus.none),
       );
 
   @override
