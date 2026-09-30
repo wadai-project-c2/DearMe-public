@@ -2717,6 +2717,12 @@ class _RoomSceneCanvasState extends State<_RoomSceneCanvas>
                 widget.onAvatarLongPress?.call();
               }
             },
+            // The placement scene reads raw pointer deltas in the Listener
+            // above. Claim vertical drags here so the enclosing page does not
+            // scroll at the same time as an object is being moved.
+            onVerticalDragUpdate: widget.onSceneDragUpdate == null
+                ? null
+                : (_) {},
             onScaleStart: widget.onSceneScaleStart,
             onScaleUpdate: widget.onSceneScaleUpdate,
             onScaleEnd: widget.onSceneScaleEnd,
