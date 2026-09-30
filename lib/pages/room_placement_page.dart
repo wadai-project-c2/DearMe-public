@@ -13,6 +13,7 @@ import '../providers/item_provider.dart';
 import '../providers/room_provider.dart';
 import '../room/furniture_placement.dart';
 import '../room/furniture_size_spec.dart';
+import '../room/placement_movement.dart';
 import '../room/placement_rotation.dart';
 import '../room/room_3d_route_visibility.dart';
 import '../room/room_calibration.dart';
@@ -492,11 +493,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
               (cell.x, cell.z),
           };
     var surface = draft.placementSurface;
-    final surfaceDelta = switch (surface) {
-      PlacementSurface.leftWall => (x: x, y: y - z, z: 0),
-      PlacementSurface.rightWall => (x: 0, y: y - z, z: x),
-      _ => (x: x, y: y, z: z),
-    };
+    final surfaceDelta = placementMoveDelta(surface, x: x, y: y, z: z);
     var rawX = draft.gridX + surfaceDelta.x;
     var rawY = draft.gridY + surfaceDelta.y;
     var rawZ = draft.gridZ + surfaceDelta.z;
@@ -1330,9 +1327,7 @@ class _PlacementPanel extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Text(
-                  fineAdjustment
-                      ? '矢印で位置を微調整できます'
-                      : 'ドラッグで移動 · 長押しで選択',
+                  fineAdjustment ? '矢印で位置を微調整できます' : 'ドラッグで移動 · 長押しで選択',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
