@@ -241,8 +241,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilledButton.icon(
-                onPressed:
-                    canSave ? () => _save(roomProvider, draft) : null,
+                onPressed: canSave ? () => _save(roomProvider, draft) : null,
                 icon: _saving
                     ? const SizedBox.square(
                         dimension: 16,
@@ -345,10 +344,14 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
 
     if (draft.placementSurface.isVertical) {
       if (_dragDelta.dx.abs() >= _dragDelta.dy.abs()) {
-        _move(_dragDelta.dx > 0 ? 1 : -1, 0, 0);
+        if (_move(_dragDelta.dx > 0 ? 1 : -1, 0, 0)) {
+          AppInteractionFeedback.tap(context);
+        }
       } else {
         // Wall Y increases upward while screen Y increases downward.
-        _move(0, 0, _dragDelta.dy > 0 ? 1 : -1);
+        if (_move(0, 0, _dragDelta.dy > 0 ? 1 : -1)) {
+          AppInteractionFeedback.tap(context);
+        }
       }
       _dragDelta = Offset.zero;
       return;
@@ -376,7 +379,9 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     // 床軸と平行な斜め4方向だけを受け付ける。上下左右に近い曖昧な
     // ジェスチャーは移動させず、次の指の区間から改めて判定する。
     if (nearestDistance <= 30) {
-      _move(nearest.x, 0, nearest.z);
+      if (_move(nearest.x, 0, nearest.z)) {
+        AppInteractionFeedback.tap(context);
+      }
     }
     _dragDelta = Offset.zero;
   }
@@ -472,9 +477,10 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
     }
   }
 
-  void _move(int x, int y, int z) {
+  /// Returns whether the draft actually moved to a different cell/surface.
+  bool _move(int x, int y, int z) {
     final draft = _draft;
-    if (draft == null) return;
+    if (draft == null) return false;
     final calibration = RoomCalibrations.forRoom(draft.roomId);
     final provider = context.read<RoomProvider>();
 
@@ -564,7 +570,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
         nextY == draft.gridY &&
         nextZ == draft.gridZ &&
         surface == draft.placementSurface) {
-      return;
+      return false;
     }
     HapticFeedback.selectionClick();
     _updateDraft(
@@ -576,6 +582,7 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
         rotationZ: surface != draft.placementSurface ? 0 : draft.rotationZ,
       ),
     );
+    return true;
   }
 
   void _setRotation({double? x, double? y, double? z}) {
@@ -929,12 +936,14 @@ class _RoomPlacementPageState extends State<RoomPlacementPage> {
       final assetKey = object.assetKey;
       if (assetKey == null || assetKey == _selectedFurnitureAssetKey) return;
       HapticFeedback.selectionClick();
+      AppInteractionFeedback.tap(context);
       _selectFurniture(provider, assetKey);
       return;
     }
     final itemId = object.itemId;
     if (itemId == null || itemId == _selectedItemId) return;
     HapticFeedback.selectionClick();
+    AppInteractionFeedback.tap(context);
     _selectItem(itemId);
   }
 
