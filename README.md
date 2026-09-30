@@ -15,24 +15,65 @@
 
 ## 必要な環境
 
-- Flutter **3.44.6**（Dartは同梱）、Git。FVMを使用する場合は`.fvmrc`にバージョンを指定済みです。
+- Git、Flutter **3.44.6**（Dartは同梱）。Flutterの指定バージョンは[.fvmrc](.fvmrc)でも管理しています。
 - iOS：macOS、Xcode、iOS Simulator。実機では自分のApple署名設定が必要です。
 - Android：Android Studio、Android SDK、エミュレーターまたは実機。
 - 本デモはiOS/Android向けです。Web・デスクトップでの動作は保証しません。
 
 ## クローンして起動
 
+### 1. リポジトリを取得する（共通）
+
 ```sh
 git clone https://github.com/wadai-project-c2/DearMe-public.git
 cd DearMe-public
+```
+
+以降のコマンドは、リポジトリのルート（`DearMe-public`フォルダ内）で実行してください。すでに取得済みの場合は、既存のフォルダに移動すれば大丈夫です。
+
+次の**2-Aか2-Bのどちらか一方**を選んでください。両方を実行する必要はありません。迷った場合は、プロジェクトの指定バージョンを使える**2-A（FVM）を推奨**します。
+
+### 2-A. FVMを使う場合（推奨）
+
+FVMは、プロジェクトごとにFlutterのバージョンを揃えるためのツールです。未導入の場合は、先に[FVMの公式インストール手順](https://fvm.app/documentation/getting-started/installation)に従って導入してください。以下の`fvm install`は、FVM本体ではなく、[.fvmrc](.fvmrc)に指定されたFlutterをインストールするコマンドです。
+
+```sh
+fvm install
+fvm flutter --version
+fvm flutter doctor
+fvm flutter pub get
+fvm flutter devices
+fvm flutter run --dart-define-from-file=dart_define.demo.json
+```
+
+上から順に実行し、`fvm flutter --version`で**3.44.6**が表示されることを確認してください。`fvm flutter doctor`で対象OSの開発環境に問題が出た場合は、案内に従って解消してから先に進んでください。
+
+**この方法では、起動・解析・テストなどにも`fvm flutter`を使います。** 通常の`flutter`はPCのPATHなどの設定によって別のFlutterを使う場合があり、`.fvmrc`があるだけでは自動的に切り替わりません。詳しくは[FVMの実行方法](https://fvm.app/documentation/guides/running-flutter)を参照してください。
+
+### 2-B. Flutterを直接インストールして使う場合（FVMなし）
+
+この方法ではFVMは不要です。まず、PCの`flutter`コマンドが使うバージョンを確認してください。
+
+```sh
 flutter --version
+```
+
+**3.44.6**と表示されることを確認してから、次を実行してください。異なるバージョンの場合は、指定バージョンを用意するか、2-AのFVMを使ってください。
+
+```sh
 flutter doctor
 flutter pub get
 flutter devices
 flutter run --dart-define-from-file=dart_define.demo.json
 ```
 
-複数端末がある場合は最後のコマンドに`-d <device-id>`を追加します。FVM利用時は先に`fvm install`を実行し、各`flutter`を`fvm flutter`に読み替えてください。トークンのコピーや追加取得は不要です。**上記の設定ファイル指定を省くと共有AWSには接続されません。** 設定はビルド時に読み込むため、変更後は再ビルドしてください。
+`flutter doctor`で対象OSの開発環境に問題が出た場合は、案内に従って解消してから先に進んでください。
+
+### 3. 端末の選択・接続設定の確認（共通）
+
+複数端末がある場合は、`devices`の出力で端末IDを確認し、選んだ方式の`run`コマンドに`-d <device-id>`を追加します。`<device-id>`は実際の端末IDに置き換えてください。
+
+トークンのコピーや追加取得は不要です。**`--dart-define-from-file=dart_define.demo.json`を省くと共有AWSには接続されません。** 設定はビルド時に読み込むため、変更後は再ビルドしてください。
 
 iPhone実機ではXcodeで`ios/Runner.xcworkspace`を開き、Signing & Capabilitiesから自分のTeamと必要に応じて一意のBundle Identifierを設定してください。共有デモ用のApple証明書は付属しません。
 
@@ -51,6 +92,8 @@ iPhone実機ではXcodeで`ios/Runner.xcworkspace`を開き、Signing & Capabili
 
 | 状況 | 対処 |
 | --- | --- |
+| `fvm`コマンドが見つからない | FVM本体のインストールとPATH設定を確認してください。`fvm install`はFVM本体の導入コマンドではありません |
+| `flutter`のバージョンが3.44.6ではない | 2-AのFVMを使うか、直接使うFlutterを指定バージョンに揃えてください |
 | 全体の上限50回に達した | 次の日本時間0時以降に再試行。端末の再インストールでは枠は増えません |
 | 混雑・短時間の制限 | 数分待って再試行。WAFの拒否は一般的な加工失敗として表示される場合もあります |
 | 401・サービス終了後の失敗 | トークン失効の可能性があります。運営の案内を確認してください |
@@ -58,13 +101,34 @@ iPhone実機ではXcodeで`ios/Runner.xcworkspace`を開き、Signing & Capabili
 | 写真を送れない | JPEG/PNG/WebP、送信データ4 MiB以下が対象です |
 | 加工失敗 | 再試行は追加の1回を消費する場合があります。連打しないでください |
 
-共有サービス停止後もUIを確認するには、次のモックモードを使用できます。実際のAI加工はしません。
+### 共有サービス停止後にUIだけを確認する
+
+次のモックモードを使用できます。実際のAI加工はしません。環境構築時に選んだ方式のコマンドを実行してください。
+
+**FVMを使う場合**
+
+```sh
+fvm flutter run --dart-define=DEARME_MOCK_IMAGE_PROCESSING=true
+```
+
+**Flutterを直接使う場合（FVMなし）**
 
 ```sh
 flutter run --dart-define=DEARME_MOCK_IMAGE_PROCESSING=true
 ```
 
 ## 開発・構成
+
+解析・テストも、環境構築時に選んだ方式で実行してください。
+
+**FVMを使う場合**
+
+```sh
+fvm flutter analyze
+fvm flutter test
+```
+
+**Flutterを直接使う場合（FVMなし）**
 
 ```sh
 flutter analyze
