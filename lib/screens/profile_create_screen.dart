@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 
 class ProfileCreateScreen extends StatelessWidget {
-  final VoidCallback? onBackToHome;
+  final VoidCallback? onBackToCreate;
 
-  const ProfileCreateScreen({super.key, this.onBackToHome});
+  const ProfileCreateScreen({super.key, this.onBackToCreate});
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +14,11 @@ class ProfileCreateScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: IconButton(
-          tooltip: 'ホームへ戻る',
-          onPressed: onBackToHome ?? () => context.go('/'),
+          tooltip: 'CREATEへ戻る',
+          onPressed: onBackToCreate ??
+              () {
+                context.go('/?tab=create');
+              },
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         title: const Text('アイコン'),

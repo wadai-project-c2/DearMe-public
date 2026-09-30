@@ -35,12 +35,79 @@ class SoundSettingsScreen extends StatelessWidget {
                 ? (value) => unawaited(audio.setSoundEffectsEnabled(value))
                 : null,
           ),
+          const Divider(height: 32),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              '効果音を試聴',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._effectPreviews.map(
+            (preview) => ListTile(
+              leading: Icon(preview.icon),
+              title: Text(preview.label),
+              subtitle: Text(preview.description),
+              trailing: const Icon(Icons.play_circle_outline),
+              enabled: audio.initialized && audio.soundEffectsEnabled,
+              onTap: audio.initialized && audio.soundEffectsEnabled
+                  ? () => unawaited(audio.playEffect(preview.effect))
+                  : null,
+            ),
+          ),
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('標準のボタン操作音はこの設定の対象外です。端末のサイレント・操作音設定に従います。'),
+            child: Text('効果音をオフにすると、上の試聴とアプリ内の演出音は再生されません。'),
           ),
         ],
       ),
     );
   }
+}
+
+const _effectPreviews = <_EffectPreview>[
+  _EffectPreview(
+      label: 'ボタン操作',
+      description: '丸く短い「コトッ」',
+      icon: Icons.touch_app_outlined,
+      effect: SoundEffect.buttonTap),
+  _EffectPreview(
+      label: '画面・タブ切替',
+      description: '軽い2音の「ポロン」',
+      icon: Icons.swap_horiz,
+      effect: SoundEffect.navigation),
+  _EffectPreview(
+      label: '画像加工完了',
+      description: '明るい3音の「きらりん」',
+      icon: Icons.auto_awesome,
+      effect: SoundEffect.processingComplete),
+  _EffectPreview(
+      label: '上スワイプ・配置',
+      description: '柔らかい「ふわっ」',
+      icon: Icons.swipe_up_alt,
+      effect: SoundEffect.swipePlacement),
+  _EffectPreview(
+      label: 'プレゼント・喜び',
+      description: '華やかなオルゴール風',
+      icon: Icons.redeem_outlined,
+      effect: SoundEffect.presentCelebration),
+  _EffectPreview(
+      label: '保存完了',
+      description: '安心感のある2音の「ぽろん」',
+      icon: Icons.check_circle_outline,
+      effect: SoundEffect.saveComplete),
+];
+
+class _EffectPreview {
+  const _EffectPreview(
+      {required this.label,
+      required this.description,
+      required this.icon,
+      required this.effect});
+
+  final String label;
+  final String description;
+  final IconData icon;
+  final SoundEffect effect;
 }

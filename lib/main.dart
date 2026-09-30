@@ -13,7 +13,6 @@ import 'services/fastapi_image_service.dart';
 import 'app_router.dart';
 import 'theme/app_theme.dart';
 import 'audio/audio_controller.dart';
-import 'services/tap_sound_feedback.dart';
 
 void main() {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -84,7 +83,6 @@ class MyApp extends StatelessWidget {
       title: 'DearMe',
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,
-      builder: (context, child) => TapSoundFeedback(child: child!),
     );
   }
 }

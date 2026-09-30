@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../audio/audio_controller.dart';
 
 class CreateMenuScreen extends StatelessWidget {
   final VoidCallback? onBackToHome;
@@ -42,7 +47,10 @@ class CreateMenuScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'サウンド設定',
-            onPressed: () => context.push('/sound_settings'),
+            onPressed: () => _withButtonSound(
+              context,
+              () => context.push('/sound_settings'),
+            ),
             icon: const Icon(Icons.music_note_outlined),
           ),
         ],
@@ -56,14 +64,20 @@ class CreateMenuScreen extends StatelessWidget {
               Expanded(
                 child: _CreateCard(
                   label: 'AVATAR',
-                  onTap: () => context.push('/avatar_create'),
+                  onTap: () => _withButtonSound(
+                    context,
+                    () => context.push('/avatar_create'),
+                  ),
                 ),
               ),
               const SizedBox(height: 38),
               Expanded(
                 child: _CreateCard(
                   label: 'ROOM',
-                  onTap: () => context.push('/room_placement'),
+                  onTap: () => _withButtonSound(
+                    context,
+                    () => context.push('/room_placement'),
+                  ),
                 ),
               ),
             ],
@@ -71,6 +85,12 @@ class CreateMenuScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _withButtonSound(BuildContext context, VoidCallback action) {
+    unawaited(
+        context.read<AudioController>().playEffect(SoundEffect.buttonTap));
+    action();
   }
 }
 
