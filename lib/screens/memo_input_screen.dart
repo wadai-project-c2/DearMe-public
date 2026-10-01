@@ -670,7 +670,7 @@ class _MediaThumbnail extends StatelessWidget {
             right: -6,
             top: -6,
             child: GestureDetector(
-              onTap: AppInteractionFeedback.wrap(onRemove),
+              onTap: AppInteractionFeedback.wrap(context, onRemove),
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -696,7 +696,7 @@ class _AddMediaPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: AppInteractionFeedback.wrap(onTap),
+      onTap: AppInteractionFeedback.wrap(context, onTap),
       child: Container(
         width: 88,
         height: 88,
